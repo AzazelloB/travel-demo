@@ -123,8 +123,7 @@ A travel discovery and itinerary application with an integrated inline CMS, inte
       - Title
       - Duration
       - Budget
-      - Stops count
-    - Add / remove / reorder routes (editor)
+      - Stops count - Add / remove / reorder routes (editor)
   - Interactive map
     - Display all route stops
     - Select stop to show details
@@ -153,11 +152,7 @@ A travel discovery and itinerary application with an integrated inline CMS, inte
       - Title
       - Description
       - Estimated visit duration
-      - Estimated cost
-    - Add existing stop
-    - Create new stop
-    - Remove stop
-    - Drag-and-drop reorder
+      - Estimated cost - Add existing stop - Create new stop - Remove stop - Drag-and-drop reorder
   - Interactive route map
     - Stop markers
     - Ordered route line
@@ -276,17 +271,16 @@ Use MapLibre with map tiles, or an SVG-based regional map if reproducing a simpl
   - Logout / switch role
 - Permissions
 
-| Action | Guest | User | Moderator | Editor | Admin |
-|---|---|---|---|---|---|
-| View published content | Yes | Yes | Yes | Yes | Yes |
-| Purchase guides | No | Yes | Yes | Yes | Yes |
-| Access owned guides | No | Yes | Yes | Yes | Yes |
-| Submit media | No | Yes | Yes | Yes | Yes |
-| Moderate submissions | No | No | Yes | No | Yes |
-| Create / edit content | No | No | No | Yes | Yes |
-| Publish content | No | No | No | Yes | Yes |
-| Manage roles | No | No | No | No | Yes |
-
+| Action                 | Guest | User | Moderator | Editor | Admin |
+| ---------------------- | ----- | ---- | --------- | ------ | ----- |
+| View published content | Yes   | Yes  | Yes       | Yes    | Yes   |
+| Purchase guides        | No    | Yes  | Yes       | Yes    | Yes   |
+| Access owned guides    | No    | Yes  | Yes       | Yes    | Yes   |
+| Submit media           | No    | Yes  | Yes       | Yes    | Yes   |
+| Moderate submissions   | No    | No   | Yes       | No     | Yes   |
+| Create / edit content  | No    | No   | No        | Yes    | Yes   |
+| Publish content        | No    | No   | No        | Yes    | Yes   |
+| Manage roles           | No    | No   | No        | No     | Yes   |
 - Backend permission enforcement
   - Check role for each operation
   - Check ownership for purchases / uploads
