@@ -1,0 +1,103 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "src/**",
+      "shared/**",
+      "worker/**",
+      "scripts/seed*",
+      "public/**",
+      "*.json",
+      "*.jsonc",
+      "vite.config.ts",
+      "!package-lock.json",
+
+      "!.biome*"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double"
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        "noNonNullAssertion": "off"
+      },
+      "complexity": {
+        "noImportantStyles": "off"
+      }
+    }
+  },
+  // SVG map controls cannot use HTML button elements. Mouse-only container handlers
+  // complement keyboard-accessible controls; CMS HTML is sanitized by cleanHtml.
+  // Traveller videos have no supplied caption-track asset.
+  "overrides": [
+    {
+      "includes": ["src/components/maps/**", "src/pages/MapPage.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useSemanticElements": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/ui/Modal.tsx",
+        "src/ui/Dropdown.tsx",
+        "src/components/editor/InlineCopy.tsx",
+        "src/components/editor/ContentEditor.tsx",
+        "src/pages/MapPage.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noStaticElementInteractions": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/components/editor/InlineCopy.tsx", "src/pages/GuidePage.tsx"],
+      "linter": {
+        "rules": {
+          "security": {
+            "noDangerouslySetInnerHtml": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/components/Community.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useMediaCaption": "off"
+          }
+        }
+      }
+    }
+  ]
+}
