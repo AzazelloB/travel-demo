@@ -16,6 +16,53 @@ const image = z
     'Choose an uploaded image or an HTTPS image URL.',
   );
 const positive = z.number().finite().nonnegative();
+const sourceLink = z.string().max(2048).url().refine((url) => url.startsWith('https://'));
+const coordinates = z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]);
+const routePlanSchema = z.object({
+  checkedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  introduction: copy(3000),
+  accessibility: copy(3000),
+  sources: z.array(z.object({ id, label: text(200), url: sourceLink })).max(30),
+  days: z.array(z.object({
+    id, title: copy(200), summary: copy(2000),
+    startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    walkingKm: positive.max(100), arrival: copy(2000), departure: copy(2000), shorterDeparture: copy(2000).optional(), notice: copy(2000).optional(),
+    map: z.object({
+      points: z.array(z.object({
+        id, kind: z.enum(['metro', 'meal', 'start']), title: copy(200), description: copy(2000), coordinates, stepId: id.optional(),
+      })).max(50),
+      paths: z.array(z.object({
+        from: id, to: id, coordinates: z.array(coordinates).min(2).max(5000), whenSkipped: id.optional(),
+      })).max(100),
+    }).optional(),
+    steps: z.array(z.object({
+      id, kind: z.enum(['visit', 'meal', 'break']), placeId: id.optional(), title: copy(200).optional(),
+      description: copy(3000), minutes: positive.max(1440), admission: copy(1000).optional(),
+      hours: copy(1000).optional(), booking: copy(1500).optional(), sourceId: id.optional(), optional: z.boolean().optional(),
+      transfer: z.object({ minutes: positive.max(1440), description: copy(2000), distance: text(100) }).optional(),
+    })).min(1).max(50),
+  })).min(1).max(30),
+  costs: z.array(z.object({ label: copy(200), min: positive, max: positive, note: copy(1000), sourceId: id.optional(), optionalStepId: id.optional() })
+    .refine((cost) => cost.max >= cost.min, 'Maximum cost must be at least the minimum.')).max(30),
+  preparation: z.array(z.object({ title: copy(200), description: copy(3000), sourceId: id.optional() })).max(30),
+  alternatives: z.array(z.object({ title: copy(200), description: copy(3000) })).max(20),
+}).superRefine((plan, context) => {
+  const sourceIds = new Set(plan.sources.map((source) => source.id));
+  const stepIds = new Set<string>();
+  const optionalIds = new Set<string>();
+  plan.days.forEach((day, dayIndex) => day.steps.forEach((step, stepIndex) => {
+    const path = ['days', dayIndex, 'steps', stepIndex];
+    if (stepIds.has(step.id)) context.addIssue({ code: 'custom', path, message: 'Step IDs must be unique.' });
+    stepIds.add(step.id);
+    if (step.optional) optionalIds.add(step.id);
+    if (step.kind === 'visit' && !step.placeId) context.addIssue({ code: 'custom', path, message: 'A visit must reference a place.' });
+    if (step.kind !== 'visit' && !step.title) context.addIssue({ code: 'custom', path, message: 'A break or meal needs a title.' });
+    if (step.sourceId && !sourceIds.has(step.sourceId)) context.addIssue({ code: 'custom', path, message: 'Unknown information source.' });
+  }));
+  plan.costs.forEach((cost, index) => {
+    if (cost.optionalStepId && !optionalIds.has(cost.optionalStepId)) context.addIssue({ code: 'custom', path: ['costs', index], message: 'Optional costs must reference an optional stop.' });
+  });
+});
 
 // Object schemas strip unknown keys, so API input cannot add arbitrary stored properties.
 export const contentSchema = z.object({
@@ -40,6 +87,7 @@ export const contentSchema = z.object({
   tripId: id.optional(),
   routeIds: z.array(id).max(500).optional(),
   stopIds: z.array(id).max(500).optional(),
+  plan: routePlanSchema.optional(),
   duration: positive.optional(),
   budget: positive.optional(),
   price: positive.optional(),

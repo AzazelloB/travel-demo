@@ -1,4 +1,5 @@
 import type { Content, Copy } from './types';
+import { ancientRomePlan } from './ancientRomePlan';
 
 const t = (en: string, pl: string): Copy => ({ en, pl });
 const photo = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1600&q=85`;
@@ -662,6 +663,135 @@ for (const [id, en, pl, lat, lng, category, enNote, plNote] of romeExtraStops) {
     duration: 60,
     budget: 0,
   });
+}
+// Keep the previous defaults so existing editorial changes are never overwritten.
+export const ancientRomePrevious = romeRoutes
+  .filter((entry) =>
+    [
+      'rome-ancient-route',
+      'rome-colosseum',
+      'rome-forum',
+      'rome-palatine',
+      'rome-capitoline',
+      'rome-campidoglio',
+    ].includes(entry.id),
+  )
+  .map((entry) => structuredClone(entry));
+const ancientRome = romeRoutes.find((entry) => entry.id === 'rome-ancient-route')!;
+ancientRome.plan = ancientRomePlan;
+ancientRome.description = t(
+  '<p>Two days among the remains of ancient Rome, from the Colosseum and imperial palaces to the collections on Capitoline Hill and the Baths of Caracalla. The route is walkable, with time for lunch and breaks between the larger sites.</p><h2>Day one: the heart of the ancient city</h2><p>Start at the Colosseum, then use the same combined ticket to explore the Roman Forum and Palatine Hill. The Forum and Palatine form one archaeological area: allow several hours and enter only once. End in Monti for dinner.</p><h2>Day two: museums and monumental baths</h2><p>Begin at the Capitoline Museums and take in the Forum view from the hill. Continue past Circus Maximus to the Baths of Caracalla. The baths are closed on Mondays, so swap the days if necessary.</p><h2>Before you go</h2><p>Reserve a timed Colosseum entry in advance through the <a href="https://colosseo.it/en/opening-times-and-tickets/">official archaeological park</a>. The standard ticket covers one entry to the Colosseum and one to the Forum–Palatine within 24 hours. Bring ID, water and comfortable shoes; paths are uneven and exposed. Check current hours and tickets for the <a href="https://www.museicapitolini.org/en/informazioni_pratiche/orari_e_indirizzi">Capitoline Museums</a> and <a href="https://turismoroma.it/en/places/baths-caracalla">Baths of Caracalla</a> before travelling. Meals, accommodation and tickets are separate.</p>',
+  '<p>Dwa dni wśród pozostałości starożytnego Rzymu: od Koloseum i cesarskich pałaców po zbiory na Kapitolu i Termy Karakalli. Trasę można pokonać pieszo, z czasem na obiad i odpoczynek.</p><h2>Dzień pierwszy: serce starożytnego miasta</h2><p>Zacznij od Koloseum, a następnie na tym samym bilecie zwiedź Forum Romanum i Palatyn. Forum i Palatyn tworzą jeden obszar archeologiczny: zaplanuj kilka godzin i jedno wejście. Wieczorem zjedz kolację w Monti.</p><h2>Dzień drugi: muzeum i monumentalne termy</h2><p>Zacznij w Muzeach Kapitolińskich i obejrzyj Forum ze wzgórza. Przejdź obok Circus Maximus do Term Karakalli. Termy są zamknięte w poniedziałki, więc w razie potrzeby zamień kolejność dni.</p><h2>Przed wyjazdem</h2><p>Zarezerwuj wejście do Koloseum na konkretną godzinę na <a href="https://colosseo.it/en/opening-times-and-tickets/">oficjalnej stronie parku archeologicznego</a>. Standardowy bilet obejmuje jedno wejście do Koloseum i jedno na teren Forum i Palatynu w ciągu 24 godzin. Zabierz dokument tożsamości, wodę i wygodne buty; ścieżki są nierówne i nasłonecznione. Przed wyjazdem sprawdź godziny i bilety do <a href="https://www.museicapitolini.org/en/informazioni_pratiche/orari_e_indirizzi">Muzeów Kapitolińskich</a> i <a href="https://turismoroma.it/en/places/baths-caracalla">Term Karakalli</a>. Posiłki, noclegi i bilety opłacane są osobno.</p>',
+);
+ancientRome.stopIds = [
+  'rome-colosseum',
+  'rome-forum',
+  'rome-palatine',
+  'rome-capitoline',
+  'rome-campidoglio',
+  'rome-circus-maximus',
+  'rome-caracalla',
+];
+const ancientNotes: Record<string, [number, Copy]> = {
+  'rome-colosseum': [
+    75,
+    t(
+      'Walk the amphitheatre’s tiers and museum. Book a timed entry, arrive 15 minutes early and bring the ID used for the named ticket.',
+      'Zwiedź kondygnacje amfiteatru i muzeum. Zarezerwuj godzinę wejścia, przyjdź 15 minut wcześniej i zabierz dokument tożsamości.',
+    ),
+  ],
+  'rome-forum': [
+    120,
+    t(
+      'Explore the temples, basilicas and Via Sacra. The Forum and Palatine share an entrance area and a single entry on the standard ticket.',
+      'Zobacz świątynie, bazyliki i Via Sacra. Forum i Palatyn tworzą jeden obszar z jednym wejściem na standardowym bilecie.',
+    ),
+  ],
+  'rome-palatine': [
+    90,
+    t(
+      'Climb among the imperial residences and gardens for views over the Forum and Circus Maximus. Continue here before leaving the archaeological area.',
+      'Wejdź między ruiny cesarskich rezydencji i ogrody, skąd widać Forum i Circus Maximus. Zwiedź Palatyn przed opuszczeniem terenu archeologicznego.',
+    ),
+  ],
+  'rome-capitoline': [
+    150,
+    t(
+      'See the Capitoline Wolf, ancient sculpture and the bronze Marcus Aurelius. The museum entrance is on Piazza del Campidoglio.',
+      'Zobacz Wilczycę Kapitolińską, starożytne rzeźby i brązowy pomnik Marka Aureliusza. Wejście znajduje się na Piazza del Campidoglio.',
+    ),
+  ],
+  'rome-campidoglio': [
+    20,
+    t(
+      'Walk behind the square to the terraces overlooking the Forum, then descend toward Circus Maximus.',
+      'Przejdź za plac na tarasy z widokiem na Forum, a potem zejdź w kierunku Circus Maximus.',
+    ),
+  ],
+};
+for (const entry of romeRoutes) {
+  const note = ancientNotes[entry.id];
+  if (note) {
+    entry.duration = note[0];
+    entry.description = t(`<p>${note[1].en}</p>`, `<p>${note[1].pl}</p>`);
+  }
+}
+for (const [id, en, pl, lat, lng, minutes, enNote, plNote] of [
+  [
+    'rome-circus-maximus',
+    'Circus Maximus',
+    'Circus Maximus',
+    41.8861,
+    12.4851,
+    30,
+    'Follow the edge of the former chariot-racing stadium towards the baths. The open valley is free to visit.',
+    'Przejdź wzdłuż dawnego stadionu wyścigów rydwanów w stronę term. Otwarta dolina jest dostępna bezpłatnie.',
+  ],
+  [
+    'rome-caracalla',
+    'Baths of Caracalla',
+    'Termy Karakalli',
+    41.88139,
+    12.49282,
+    90,
+    'Explore the vast bathing complex and its surviving mosaics. Allow time for the gardens; the site is closed on Mondays.',
+    'Poznaj rozległy kompleks łaźni i zachowane mozaiki. Zostaw czas na ogrody; obiekt jest zamknięty w poniedziałki.',
+  ],
+] as const) {
+  romeRoutes.push({
+    ...base(id, 'place', en, pl, t(`<p>${enNote}</p>`, `<p>${plNote}</p>`), romeTour.image),
+    destinationId: 'rome',
+    lat,
+    lng,
+    category: 'sight',
+    duration: minutes,
+  });
+}
+export const ancientRomePreviousPhotos = romeRoutes
+  .filter((entry) =>
+    [
+      'rome-forum',
+      'rome-palatine',
+      'rome-capitoline',
+      'rome-campidoglio',
+      'rome-circus-maximus',
+      'rome-caracalla',
+    ].includes(entry.id),
+  )
+  .map((entry) => ({ id: entry.id, image: entry.image }));
+const ancientRomePhotos: Record<string, string> = {
+  'rome-forum': photo('photo-1725402209645-bc9a8452d587'),
+  'rome-palatine': photo('photo-1783713335433-77e3338adabc'),
+  'rome-capitoline': photo('photo-1678180295581-0626e88db42f'),
+  'rome-campidoglio': photo('photo-1678180295581-0626e88db42f'),
+  'rome-circus-maximus': photo('photo-1734809633535-e3e888551395'),
+  'rome-caracalla': photo('photo-1667853648306-c3f7ea9a9743'),
+};
+for (const entry of romeRoutes) {
+  if (ancientRomePhotos[entry.id]) {
+    entry.image = ancientRomePhotos[entry.id];
+    entry.gallery = [entry.image];
+  }
 }
 seed.push(...europeTours, ...romeRoutes);
 const peruImage = photo('photo-1526392060635-9d6019884377');

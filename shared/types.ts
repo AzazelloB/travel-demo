@@ -2,6 +2,62 @@ export type Role = 'Guest' | 'User' | 'Moderator' | 'Editor' | 'Admin';
 export type Lang = 'en' | 'pl';
 export type Copy = { en: string; pl: string };
 export type Kind = 'destination' | 'trip' | 'route' | 'place' | 'page';
+export type MapCoordinate = [longitude: number, latitude: number];
+export interface RouteMapPoint {
+  id: string;
+  kind: 'metro' | 'meal' | 'start';
+  title: Copy;
+  description: Copy;
+  coordinates: MapCoordinate;
+  stepId?: string;
+}
+export interface RouteMapPath {
+  from: string;
+  to: string;
+  coordinates: MapCoordinate[];
+  whenSkipped?: string;
+}
+export interface RouteDayMap {
+  points: RouteMapPoint[];
+  paths: RouteMapPath[];
+}
+export interface RouteStep {
+  id: string;
+  kind: 'visit' | 'meal' | 'break';
+  placeId?: string;
+  title?: Copy;
+  description: Copy;
+  minutes: number;
+  admission?: Copy;
+  hours?: Copy;
+  booking?: Copy;
+  sourceId?: string;
+  optional?: boolean;
+  transfer?: { minutes: number; description: Copy; distance: string };
+}
+export interface RouteDay {
+  id: string;
+  title: Copy;
+  summary: Copy;
+  startTime: string;
+  walkingKm: number;
+  arrival: Copy;
+  departure: Copy;
+  shorterDeparture?: Copy;
+  notice?: Copy;
+  steps: RouteStep[];
+  map?: RouteDayMap;
+}
+export interface RoutePlan {
+  checkedAt: string;
+  introduction: Copy;
+  accessibility: Copy;
+  days: RouteDay[];
+  costs: { label: Copy; min: number; max: number; note: Copy; sourceId?: string; optionalStepId?: string }[];
+  preparation: { title: Copy; description: Copy; sourceId?: string }[];
+  alternatives: { title: Copy; description: Copy }[];
+  sources: { id: string; label: string; url: string }[];
+}
 export interface Content {
   id: string;
   kind: Kind;
@@ -18,6 +74,7 @@ export interface Content {
   tripId?: string;
   routeIds?: string[];
   stopIds?: string[];
+  plan?: RoutePlan;
   duration?: number;
   budget?: number;
   price?: number;

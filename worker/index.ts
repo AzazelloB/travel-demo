@@ -1,7 +1,10 @@
 import schema from '../migrations/0001_initial.sql?raw';
 import mediaSchema from '../migrations/0002_media_indexes.sql?raw';
+import { ancientRomePlan } from '../shared/ancientRomePlan';
 import {
   agencyPage,
+  ancientRomePrevious,
+  ancientRomePreviousPhotos,
   europeDestinations,
   europeTours,
   peruContent,
@@ -483,6 +486,88 @@ async function init(env: Env) {
       }
       if (
         !(await env.DB.prepare(
+          "SELECT value FROM app_meta WHERE key='ancient-rome-guide-v1'",
+        ).first())
+      ) {
+        const ids = [
+          'rome-ancient-route',
+          'rome-colosseum',
+          'rome-forum',
+          'rome-palatine',
+          'rome-capitoline',
+          'rome-campidoglio',
+        ];
+        const updated = romeRoutes.filter((entry) => ids.includes(entry.id));
+        const additions = romeRoutes.filter((entry) =>
+          ['rome-circus-maximus', 'rome-caracalla'].includes(entry.id),
+        );
+        await env.DB.batch([
+          ...additions.map((entry) =>
+            env.DB.prepare('INSERT OR IGNORE INTO content VALUES (?, ?, ?)').bind(
+              entry.id,
+              entry.kind,
+              JSON.stringify(entry),
+            ),
+          ),
+          ...updated.flatMap((entry) => {
+            const old = ancientRomePrevious.find((item) => item.id === entry.id)!;
+            const changes = [
+              env.DB.prepare(
+                "UPDATE content SET data=json_set(data, '$.description', json(?)) WHERE id=? AND json_extract(data, '$.description')=json(?)",
+              ).bind(JSON.stringify(entry.description), entry.id, JSON.stringify(old.description)),
+            ];
+            if (entry.kind === 'route')
+              changes.push(
+                env.DB.prepare(
+                  "UPDATE content SET data=json_set(data, '$.stopIds', json(?)) WHERE id=? AND json_extract(data, '$.stopIds')=json(?)",
+                ).bind(JSON.stringify(entry.stopIds), entry.id, JSON.stringify(old.stopIds)),
+              );
+            else
+              changes.push(
+                env.DB.prepare(
+                  "UPDATE content SET data=json_set(data, '$.duration', ?) WHERE id=? AND json_extract(data, '$.duration')=?",
+                ).bind(entry.duration, entry.id, old.duration),
+              );
+            return changes;
+          }),
+          env.DB.prepare("INSERT OR IGNORE INTO app_meta VALUES ('ancient-rome-guide-v1','done')"),
+        ]);
+      }
+      if (
+        !(await env.DB.prepare(
+          "SELECT value FROM app_meta WHERE key='ancient-rome-photos-v1'",
+        ).first())
+      ) {
+        await env.DB.batch([
+          ...ancientRomePreviousPhotos.map((old) => {
+            const entry = romeRoutes.find((item) => item.id === old.id)!;
+            return env.DB.prepare(
+              "UPDATE content SET data=json_set(data, '$.image', ?) WHERE id=? AND json_extract(data, '$.image')=?",
+            ).bind(entry.image, entry.id, old.image);
+          }),
+          env.DB.prepare("INSERT OR IGNORE INTO app_meta VALUES ('ancient-rome-photos-v1','done')"),
+        ]);
+      }
+      if (!(await env.DB.prepare("SELECT value FROM app_meta WHERE key='ancient-rome-map-v1'").first())) {
+        await env.DB.batch([
+          ...ancientRomePlan.days.map((day, index) => env.DB.prepare(
+            `UPDATE content SET data=json_set(data, '$.plan.days[${index}].map', json(?)) WHERE id='rome-ancient-route' AND json_extract(data, '$.plan.days[${index}].id')=? AND json_extract(data, '$.plan.days[${index}].map') IS NULL`,
+          ).bind(JSON.stringify(day.map), day.id)),
+          env.DB.prepare("INSERT OR IGNORE INTO app_meta VALUES ('ancient-rome-map-v1','done')"),
+        ]);
+      }
+      if (!(await env.DB.prepare("SELECT value FROM app_meta WHERE key='ancient-rome-plan-v2'").first())) {
+        await env.DB.batch([
+          env.DB.prepare("UPDATE content SET data=json_set(data, '$.plan', json(?)) WHERE id='rome-ancient-route' AND json_extract(data, '$.plan') IS NULL")
+            .bind(JSON.stringify(ancientRomePlan)),
+          env.DB.prepare("UPDATE content SET data=json_set(data, '$.duration', 75) WHERE id='rome-colosseum' AND json_extract(data, '$.duration')=90"),
+          env.DB.prepare("UPDATE content SET data=json_set(data, '$.plan.days[1].shorterDeparture', json(?)) WHERE id='rome-ancient-route' AND json_extract(data, '$.plan') IS NOT NULL AND json_extract(data, '$.plan.days[1].shorterDeparture') IS NULL")
+            .bind(JSON.stringify(ancientRomePlan.days[1].shorterDeparture)),
+          env.DB.prepare("INSERT OR IGNORE INTO app_meta VALUES ('ancient-rome-plan-v2','done')"),
+        ]);
+      }
+      if (
+        !(await env.DB.prepare(
           "SELECT value FROM app_meta WHERE key='rome-traveller-photos-v1'",
         ).first())
       ) {
@@ -804,6 +889,7 @@ export default {
               .slice(0, 600);
           return {
             ...c,
+            plan: undefined,
             description: { en: excerpt(c.description.en), pl: excerpt(c.description.pl) },
           };
         });
