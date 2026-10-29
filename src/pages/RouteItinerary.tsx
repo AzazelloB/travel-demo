@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { type Content, copy, type Lang, type RoutePlan, type RouteMapPoint } from '../../shared/types';
-import { RouteMap } from '../components/maps/RouteMap';
+import { RouteMap, type RouteMapSelection } from '../components/maps/RouteMap';
 import { useStore } from '../context/Store';
 import { downloadGuide, localGuide } from '../lib/offline';
 import { Button } from '../ui/Button';
@@ -37,15 +37,16 @@ function SourceLink({ plan, id, lang }: { plan: RoutePlan; id?: string; lang: La
   ) : null;
 }
 
-export function RouteItinerary({ route, stops, lang, selected, onSelect }: {
+export function RouteItinerary({ route, stops, lang, selection, onSelect }: {
   route: Content & { plan: RoutePlan };
   stops: Content[];
   lang: Lang;
-  selected: string;
+  selection: RouteMapSelection;
   onSelect: (id: string) => void;
 }) {
   const { user, online, notice } = useStore();
   const { plan } = route;
+  const selected = selection.id;
   const words = (en: string, pl: string) => lang === 'pl' ? pl : en;
   const [dayId, setDayId] = useState(plan.days[0].id);
   const [skipped, setSkipped] = useState<string[]>([]);
@@ -242,7 +243,7 @@ export function RouteItinerary({ route, stops, lang, selected, onSelect }: {
 
       <section ref={mapSection} id="day-map" className="scroll-mt-6 pt-6" aria-labelledby="day-map-heading">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><h2 id="day-map-heading" className="text-3xl">{words('On the map', 'Na mapie')}</h2><span className="text-sm text-muted">{words('Select a place for details and directions', 'Wybierz miejsce, aby zobaczyć szczegóły i dojazd')}</span></div>
-        <RouteMap places={dayStops} details={details} paths={mapPaths} points={mapPoints} lang={lang} selected={selected} onSelect={onSelect} editable={false} onMove={() => {}} onAdd={() => {}} />
+        <RouteMap places={dayStops} details={details} paths={mapPaths} points={mapPoints} lang={lang} selection={selection} onSelect={onSelect} editable={false} onMove={() => {}} onAdd={() => {}} />
       </section>
 
       <section id="route-preparation" className="mt-16 scroll-mt-6 grid items-start gap-8 lg:grid-cols-2">

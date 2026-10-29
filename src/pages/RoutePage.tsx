@@ -1,5 +1,5 @@
 import { ArrowLeft, Clock3, Footprints, GripVertical, MapPin } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { type Content, copy } from '../../shared/types';
 import { ContentTools, OrderButtons, Relations } from '../components/ContentTools';
@@ -7,7 +7,7 @@ import { ContentEditor, newContent } from '../components/editor/ContentEditor';
 import { InlineCopy } from '../components/editor/InlineCopy';
 import { Gallery } from '../components/Gallery';
 import { RouteCard } from '../components/RouteCard';
-import { RouteMap } from '../components/maps/RouteMap';
+import { RouteMap, type RouteMapSelection } from '../components/maps/RouteMap';
 import { useStore } from '../context/Store';
 import { useContentDetail } from '../hooks/useContentDetail';
 import { useSeo } from '../hooks/useSeo';
@@ -22,8 +22,11 @@ export function RouteDetail() {
   const { content, lang, editing, save, notice, user, online, hydrate } = useStore();
   const words = useWords();
   const route = content.find((c) => c.kind === 'route' && c.slug === slug);
-  const [selected, setSelected] = useState(''),
-    [editor, setEditor] = useState<Content | null>(null);
+  const [selection, setSelection] = useState<RouteMapSelection>({ id: '' });
+  const [editor, setEditor] = useState<Content | null>(null);
+  const selected = selection.id;
+  // Each selection requests focus, including a repeat selection of the same place.
+  const setSelected = useCallback((id: string) => setSelection({ id }), []);
   useSeo(route);
   const ready = useContentDetail(route?.id);
   useEffect(() => {
@@ -86,7 +89,7 @@ export function RouteDetail() {
         </div>
       </div>
       {route.plan && !editing ? (
-        <RouteItinerary key={route.id} route={{ ...route, plan: route.plan }} stops={stops} lang={lang} selected={selected} onSelect={setSelected} />
+        <RouteItinerary key={route.id} route={{ ...route, plan: route.plan }} stops={stops} lang={lang} selection={selection} onSelect={setSelected} />
       ) : <>
       <div className="max-w-4xl py-10 md:py-14">
         <InlineCopy
@@ -185,7 +188,7 @@ export function RouteDetail() {
           <RouteMap
             places={stops}
             lang={lang}
-            selected={selected}
+            selection={selection}
             onSelect={setSelected}
             editable={editing}
             onMove={(id, lat, lng) => {

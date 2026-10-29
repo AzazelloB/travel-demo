@@ -11,12 +11,16 @@ import { Footprints, MapPin, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { type Content, copy, type Lang, type RouteMapPath, type RouteMapPoint, type RouteStep } from '../../../shared/types';
 
+export interface RouteMapSelection {
+  id: string;
+}
+
 interface Props {
   places: Content[];
   details?: Record<string, RouteStep>;
   paths?: RouteMapPath[];
   points?: RouteMapPoint[];
-  selected: string;
+  selection: RouteMapSelection;
   onSelect: (id: string) => void;
   editable: boolean;
   onMove: (id: string, lat: number, lng: number) => void;
@@ -24,7 +28,7 @@ interface Props {
   lang: Lang;
 }
 
-export function RouteMap({ places, details, paths = [], points = [], selected, onSelect, editable, onMove, onAdd, lang }: Props) {
+export function RouteMap({ places, details, paths = [], points = [], selection, onSelect, editable, onMove, onAdd, lang }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef(new Map<string, { marker: maplibregl.Marker; open: () => void }>());
@@ -385,6 +389,7 @@ export function RouteMap({ places, details, paths = [], points = [], selected, o
   }, [overlayData, lang]);
 
   useEffect(() => {
+    const selected = selection.id;
     for (const [id, entry] of markers.current) {
       const button = entry.marker.getElement();
       button.setAttribute('aria-pressed', String(id === selected));
@@ -397,7 +402,7 @@ export function RouteMap({ places, details, paths = [], points = [], selected, o
       map.current.panTo(marker.marker.getLngLat());
       marker.open();
     }
-  }, [selected]);
+  }, [selection]);
 
   return (
     <div className="relative isolate overflow-hidden rounded-2xl border border-line bg-surface">
