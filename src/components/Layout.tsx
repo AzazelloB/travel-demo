@@ -32,7 +32,7 @@ export function Layout({ children }: { children: ReactNode }) {
           aria-label="Roam home, demo website"
         >
           <span className="demo-logo-label pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 -rotate-16 whitespace-nowrap border-2 border-stamp px-2 py-1 font-sans text-xs font-extrabold uppercase tracking-wide text-stamp-ink paint-order-stroke stroke-stamp max-sm:text-2xs">
-            Demo, not a real website
+            not a real website
           </span>
           <Mountain size={29} strokeWidth={1.6} />
           roam<span>®</span>
@@ -210,7 +210,7 @@ export function Layout({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex justify-between gap-5 pt-6 text-xs text-muted [&>div]:flex [&>div]:gap-5 max-sm:flex-col">
-            <span>© {new Date().getFullYear()} Roam</span>
+            <span>© {new Date().getFullYear()} Roam. All rights reserved.</span>
             <div>
               <Link to="/legal/privacy">{words('Privacy', 'Prywatność')}</Link>
               <Link to="/legal/terms">{words('Terms', 'Regulamin')}</Link>
