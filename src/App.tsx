@@ -10,9 +10,12 @@ import { Legal } from './pages/LegalPage';
 import { Moderation } from './pages/ModerationPage';
 import { NotFound } from './pages/NotFoundPage';
 import { QuotesPage } from './pages/QuotesPage';
-import { RouteDetail } from './pages/RoutePage';
 import { MyRoutes } from './pages/RoutesPage';
 import { Listing } from './pages/ToursPage';
+
+const RouteDetail = lazy(() =>
+  import('./pages/RoutePage').then((module) => ({ default: module.RouteDetail })),
+);
 
 const WorldMap = lazy(() =>
   import('./pages/MapPage').then((module) => ({ default: module.WorldMap })),
@@ -34,8 +37,14 @@ export function App() {
           <Route path="/trips" element={<Listing kind="trip" />} />
           <Route path="/destinations/:slug" element={<Detail kind="destination" />} />
           <Route path="/trips/:slug" element={<Detail kind="trip" />} />
-          <Route path="/places/:slug" element={<Detail kind="place" />} />
-          <Route path="/routes/:slug" element={<RouteDetail />} />
+          <Route
+            path="/routes/:slug"
+            element={
+              <Suspense fallback={null}>
+                <RouteDetail />
+              </Suspense>
+            }
+          />
           <Route
             path="/map"
             element={

@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock3, Footprints, GripVertical, LockKeyhole, MapPin } from 'lucide-react';
+import { ArrowLeft, Clock3, Footprints, GripVertical, MapPin } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { type Content, copy } from '../../shared/types';
@@ -6,15 +6,16 @@ import { ContentTools, OrderButtons, Relations } from '../components/ContentTool
 import { ContentEditor, newContent } from '../components/editor/ContentEditor';
 import { InlineCopy } from '../components/editor/InlineCopy';
 import { Gallery } from '../components/Gallery';
-import { TravelMap } from '../components/maps/TravelMap';
+import { RouteCard } from '../components/RouteCard';
+import { RouteMap } from '../components/maps/RouteMap';
 import { useStore } from '../context/Store';
 import { useContentDetail } from '../hooks/useContentDetail';
 import { useSeo } from '../hooks/useSeo';
 import { useWords } from '../hooks/useWords';
-import { money, pathTo, routeDuration } from '../lib/content';
+import { pathTo, routeDuration } from '../lib/content';
 import { localGuide } from '../lib/offline';
-import { SectionHead } from '../ui/SectionHead';
 import { NotFound } from './NotFoundPage';
+import { RouteItinerary } from './RouteItinerary';
 
 export function RouteDetail() {
   const { slug } = useParams();
@@ -44,71 +45,65 @@ export function RouteDetail() {
     stops = (route.stopIds || [])
       .map((id) => content.find((c) => c.id === id))
       .filter((c): c is Content => !!c);
-  const access = true;
-  const siblings = trip?.routeIds || [],
-    index = siblings.indexOf(route.id);
+  const otherRoutes = (trip?.routeIds || [])
+    .filter((id) => id !== route.id)
+    .map((id) => content.find((entry) => entry.id === id))
+    .filter((entry): entry is Content => !!entry);
   return (
-    <div className="mx-auto w-full max-w-content px-6 md:px-9 xl:px-14 pb-20 pt-9 [&>.inline-copy_h1]:mb-7 [&>.inline-copy_h1]:text-display max-sm:[&>.inline-copy_h1]:text-5xl">
-      <div className="mb-9 flex flex-wrap items-center gap-3 text-xs font-semibold text-muted [&_a]:inline-flex [&_a]:items-center [&_a]:gap-2 [&_a]:text-primary [&_a]:hover:text-accent">
-        {trip && (
-          <Link to={pathTo(trip)}>
-            <ArrowLeft size={14} />
-            {copy(trip.title, lang)}
-          </Link>
-        )}
-        <span>/</span>
-        <span>{words('Route', 'Trasa')}</span>
+    <div className="mx-auto w-full max-w-content px-6 pb-20 pt-8 md:px-9 xl:px-14">
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <Link
+          to={trip ? pathTo(trip) : '/routes'}
+          className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-primary transition-colors hover:bg-lilac"
+        >
+          <ArrowLeft size={16} />
+          {trip ? copy(trip.title, lang) : words('All routes', 'Wszystkie trasy')}
+        </Link>
+        <ContentTools item={route} />
       </div>
-      <ContentTools item={route} />
-      <div className="mb-5 flex flex-wrap gap-2 [&_span]:flex [&_span]:items-center [&_span]:gap-2 [&_span]:rounded-lg [&_span]:bg-surface [&_span]:px-3 [&_span]:py-2 [&_span]:text-xs [&_span]:font-bold [&_span]:capitalize [&_span]:text-primary">
-        <span>
-          <Footprints size={15} />
-          {route.transport}
-        </span>
-        <span>
-          <Clock3 size={15} />
-          {routeDuration(route.duration, lang)}
-        </span>
-        <span>{money(route.budget)}</span>
+      <div className="relative flex min-h-80 items-end overflow-hidden rounded-3xl bg-primary-dark md:min-h-120">
+        <img src={route.image} alt="" className="absolute inset-0 size-full object-cover" />
+        <div className="absolute inset-0 bg-linear-to-t from-ink/90 via-ink/30 to-transparent" />
+        <div className="relative w-full p-7 text-white md:p-12">
+          <p className="mb-3 text-xs font-bold uppercase tracking-widest text-white/80">
+            {words('Route', 'Trasa')}
+          </p>
+          <InlineCopy item={route} className="text-5xl text-white md:text-7xl" />
+          <div className="mt-5 flex flex-wrap gap-2 text-sm font-semibold">
+            {route.duration && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2">
+                <Clock3 size={16} />
+                {routeDuration(route.duration, lang)}
+              </span>
+            )}
+            {route.transport && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2">
+                <Footprints size={16} />
+                {route.transport === 'walking' ? words('On foot', 'Pieszo') : route.transport}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
-      <InlineCopy item={route} />
-      <div className="mb-7 h-80 overflow-hidden rounded-3xl max-sm:h-56 [&_img]:h-full">
-        <img src={route.image} alt={copy(route.title, lang)} />
-      </div>
-      {access ? (
+      {route.plan && !editing ? (
+        <RouteItinerary key={route.id} route={{ ...route, plan: route.plan }} stops={stops} lang={lang} selected={selected} onSelect={setSelected} />
+      ) : <>
+      <div className="max-w-4xl py-10 md:py-14">
         <InlineCopy
           item={route}
           field="description"
           rich
           as="div"
-          className="text-sm leading-loose text-muted [&_p]:mb-4 [&_h2]:my-5 [&_h2]:text-ink [&_h3]:my-4 [&_h3]:text-ink [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-primary [&_a]:rounded [&_a]:bg-lilac/60 [&_a]:px-1 [&_a]:font-semibold [&_a:hover]:bg-lilac [&_strong]:text-ink mb-8 max-w-4xl text-base"
+          className="text-base leading-relaxed text-muted [&_p]:mb-4 [&_h2]:mb-3 [&_h2]:mt-9 [&_h2]:text-3xl [&_h2]:text-ink [&_h3]:my-4 [&_h3]:text-ink [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:font-semibold [&_a]:text-primary [&_a:hover]:text-accent [&_strong]:text-ink"
         />
-      ) : (
-        <div className="mb-9 flex items-center gap-3 rounded-xl border border-line bg-surface p-5 [&_p]:text-sm">
-          <LockKeyhole size={19} />
-          <p>
-            {words(
-              'The full route notes are included with the tour.',
-              'Szczegółowe opisy tras znajdziesz w opisie wycieczki.',
-            )}
-          </p>
-          {trip && (
-            <Link
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-lilac hover:text-primary-dark"
-              to={pathTo(trip)}
-            >
-              {words('View tour', 'Zobacz wycieczkę')}
-            </Link>
-          )}
-        </div>
-      )}
-      <div className="grid grid-cols-2 items-start gap-9 max-md:grid-cols-1">
-        <div className="">
-          <SectionHead title={words('Stops.', 'Przystanki.')} />
+      </div>
+      <div>
+        {editing && (
+        <div>
           {stops.map((stop, i) => (
             <article
               key={stop.id}
-              className={`mb-3 rounded-2xl border border-line bg-white p-5 transition-colors [&.selected]:border-accent [&.selected]:ring-1 [&.selected]:ring-accent [&>p]:mt-4 [&>p]:text-sm [&>p]:text-muted ${selected === stop.id ? 'selected' : ''}`}
+              className={`group mb-4 overflow-hidden rounded-2xl border bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${selected === stop.id ? 'border-accent' : 'border-line'}`}
               draggable={editing}
               onDragStart={(e) => e.dataTransfer.setData('text/plain', stop.id)}
               onDragOver={(e) => {
@@ -123,33 +118,50 @@ export function RouteDetail() {
                 save({ ...route, stopIds: ids }).catch((e) => notice(e.message));
               }}
             >
-              <button
-                type="button"
-                className="w-full justify-start gap-3 p-0 text-left [&>img]:h-20 [&>img]:w-20 [&>img]:rounded-lg [&>div]:flex-1 [&_h3]:mb-2 [&_h3]:text-2xl [&>svg:last-child]:text-accent"
-                onClick={() => setSelected(stop.id)}
-              >
-                {editing && <GripVertical size={15} />}
-                <img src={stop.image} alt="" />
-                <div>
-                  <span className="mb-3 flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-widest text-muted">
-                    {stop.category}
-                  </span>
-                  <h3>{copy(stop.title, lang)}</h3>
-                  <span className="flex items-center gap-2 text-xs text-muted">
-                    {stop.duration} min · {money(stop.budget)}
-                  </span>
+              <div className="flex gap-5 p-4 sm:p-5">
+                <img
+                  src={stop.image}
+                  alt=""
+                  loading="lazy"
+                  className="h-28 w-28 shrink-0 rounded-xl object-cover sm:h-32 sm:w-36"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-muted">
+                    {editing && <GripVertical size={15} />}
+                    {stop.duration ? (
+                      <>
+                        <Clock3 size={14} /> {stop.duration} min
+                      </>
+                    ) : null}
+                  </div>
+                  <h3 className="text-2xl text-ink">{copy(stop.title, lang)}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">
+                    {copy(stop.description, lang).replace(/<[^>]*>/g, '')}
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-primary transition-colors hover:bg-lilac"
+                      onClick={() => setSelected(stop.id)}
+                    >
+                      <MapPin size={16} />
+                      {words('Show on map', 'Pokaż na mapie')}
+                    </button>
+                    {stop.lat != null && stop.lng != null && (
+                      <a
+                        className="inline-flex min-h-10 items-center rounded-xl px-3 text-sm font-semibold text-primary transition-colors hover:bg-lilac"
+                        href={`https://www.google.com/maps/search/?api=1&query=${stop.lat},${stop.lng}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {words('Open in Google Maps', 'Otwórz w Google Maps')}
+                      </a>
+                    )}
+                  </div>
                 </div>
-                <MapPin size={17} />
-              </button>
-              {access && <p>{copy(stop.description, lang).replace(/<[^>]*>/g, '')}</p>}
-              <div className="mt-3 flex items-center justify-between">
-                <Link
-                  className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-lilac hover:text-primary-dark"
-                  to={pathTo(stop)}
-                >
-                  {words('Place details', 'Szczegóły miejsca')}
-                </Link>
-                {editing && (
+              </div>
+              {editing && (
+                <div className="flex justify-end px-5 pb-2">
                   <OrderButtons
                     ids={route.stopIds || []}
                     index={i}
@@ -157,8 +169,8 @@ export function RouteDetail() {
                       save({ ...route, stopIds: ids }).catch((e) => notice(e.message))
                     }
                   />
-                )}
-              </div>
+                </div>
+              )}
             </article>
           ))}
           <Relations
@@ -168,12 +180,13 @@ export function RouteDetail() {
             onCreate={() => setEditor(newContent('place', route))}
           />
         </div>
-        <div className="sticky top-6 max-md:relative max-md:row-start-1 [&_.travel-map>svg]:min-h-90">
-          <TravelMap
+        )}
+        <div>
+          <RouteMap
             places={stops}
+            lang={lang}
             selected={selected}
             onSelect={setSelected}
-            route
             editable={editing}
             onMove={(id, lat, lng) => {
               const p = content.find((c) => c.id === id);
@@ -181,37 +194,22 @@ export function RouteDetail() {
             }}
             onAdd={(lat, lng) => setEditor({ ...newContent('place', route), lat, lng })}
           />
-          <div className="mt-3 flex items-center justify-center gap-2 text-xs text-muted">
-            <Footprints size={15} />
-            {words(
-              'Illustrated route · check local conditions before travel.',
-              'Trasa poglądowa · sprawdź warunki przed podróżą.',
-            )}
-          </div>
         </div>
       </div>
+      </>}
       <Gallery item={route} />
-      <div className="mt-8 flex items-center justify-between border-t border-line pt-10">
-        {index > 0 && content.find((c) => c.id === siblings[index - 1]) ? (
-          <Link
-            className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-lilac hover:text-primary-dark"
-            to={pathTo(content.find((c) => c.id === siblings[index - 1])!)}
-          >
-            <ArrowLeft size={16} />
-            {words('Previous route', 'Poprzednia trasa')}
-          </Link>
-        ) : (
-          <span />
-        )}
-        {index < siblings.length - 1 && content.find((c) => c.id === siblings[index + 1]) && (
-          <Link
-            className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-lilac hover:text-primary-dark"
-            to={pathTo(content.find((c) => c.id === siblings[index + 1])!)}
-          >
-            {words('Next route', 'Następna trasa')}
-          </Link>
-        )}
-      </div>
+      {otherRoutes.length > 0 && (
+        <section className="mt-8 border-t border-line pt-10">
+          <h2 className="mb-6 text-3xl">{words('Other routes', 'Inne trasy')}</h2>
+          <div className="flex gap-4 overflow-x-auto pb-5 pt-2">
+            {otherRoutes.map((sibling) => (
+              <div key={sibling.id} className="w-72 shrink-0">
+                <RouteCard route={sibling} content={content} lang={lang} compact />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       {editor && (
         <ContentEditor
           item={editor}

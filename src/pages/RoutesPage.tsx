@@ -1,12 +1,11 @@
 import { Check, Download, MapPin, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { copy, type Guide } from '../../shared/types';
+import { copy } from '../../shared/types';
 import { useStore } from '../context/Store';
 import { useWords } from '../hooks/useWords';
-import { api } from '../lib/api';
 import { pathTo, routeDuration } from '../lib/content';
-import { localGuide } from '../lib/offline';
+import { downloadGuide, localGuide } from '../lib/offline';
 import { buttonStyles } from '../ui/Button';
 import { Empty } from '../ui/Empty';
 
@@ -36,34 +35,7 @@ export function MyRoutes() {
   async function download(tripId: string) {
     setBusy(tripId);
     try {
-      const routeBundle = await api<Guide>(`guides/${tripId}`);
-      const cache = await caches.open(`roam-guide-images-${user.id}-${tripId}`);
-      const images = [
-        ...new Set(
-          [routeBundle.trip, ...routeBundle.routes, ...routeBundle.places].flatMap((c) => [
-            c.image,
-            ...c.gallery,
-          ]),
-        ),
-      ];
-      let missed = 0;
-      await Promise.all(
-        images.map(async (image) => {
-          try {
-            const response = await fetch(image, {
-              mode: image.startsWith('https:') ? 'no-cors' : 'same-origin',
-            });
-            if (!response.ok && response.type !== 'opaque') throw new Error();
-            await cache.put(image, response);
-          } catch {
-            missed++;
-          }
-        }),
-      );
-      await localGuide(user.id, tripId, 'put', {
-        ...routeBundle,
-        downloadedAt: new Date().toISOString(),
-      });
+      const { missed } = await downloadGuide(user.id, tripId);
       await load();
       notice(
         missed

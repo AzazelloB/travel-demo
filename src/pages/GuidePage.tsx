@@ -107,9 +107,7 @@ export function GuidePage() {
               >
                 <img src={place.image} alt="" loading="lazy" />
                 <div>
-                  <Link to={pathTo(place)}>
-                    <h3>{copy(place.title, lang)}</h3>
-                  </Link>
+                  <h3>{copy(place.title, lang)}</h3>
                   <span>
                     {place.duration} min · {money(place.budget)}
                   </span>
